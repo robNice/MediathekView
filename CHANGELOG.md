@@ -3,6 +3,7 @@
 - **BUGFIX:** Workaround für Oracle JDK-8024695 eingebaut. Dies verhinderte das korrekte Abspielen von Filmen.
 - **BUGFIX:** Veraltetes Sendericon wird nicht mehr im Filminfo-Dialog dargestellt.
 - **BUGFIX:** Zielpfad im "Film Speichern"-Dialog wird nicht mehr abgeschnitten angezeigt.
+- Große Datenbank-Maintenance der Filmhistorie wird nur noch alle 30 Tage ausgeführt, nicht bei jedem Beenden. Kann manuell über das Hilfe-Menü gestartet werden.
 
 # **14.4.2**
 - Downgrade JDK 25 zu 24 auch für macOS (Intel und Apple Silicon) Builds

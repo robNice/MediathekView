@@ -4,6 +4,7 @@ import com.google.common.collect.Sets
 import mediathek.config.Daten
 import mediathek.daten.DatenFilm
 import mediathek.gui.messages.history.DownloadHistoryChangedEvent
+import mediathek.tool.ApplicationConfiguration
 import mediathek.tool.MessageBus
 import mediathek.tool.sql.SqlDatabaseConfig
 import org.apache.logging.log4j.LogManager
@@ -11,24 +12,27 @@ import org.sqlite.SQLiteDataSource
 import java.nio.file.Files
 import java.nio.file.Path
 import java.sql.*
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import kotlin.system.exitProcess
+
 
 /**
  * Database based seen history controller.
  */
 class SeenHistoryController : AutoCloseable {
-    private var connection: Connection? = null
-    private var insertStatement: PreparedStatement? = null
+    private var connection: Connection
+    private var insertStatement: PreparedStatement
     private val dataSource: SQLiteDataSource = SqlDatabaseConfig.dataSource
-    private var deleteStatement: PreparedStatement? = null
-    private var seenStatement: PreparedStatement? = null
+    private var deleteStatement: PreparedStatement
+    private var seenStatement: PreparedStatement
 
     /**
      * Remove all entries from the database.
      */
     fun removeAll() {
         try {
-            connection!!.createStatement().use { stmt -> stmt.executeUpdate("DELETE FROM seen_history") }
+            connection.createStatement().use { stmt -> stmt.executeUpdate("DELETE FROM seen_history") }
             sendChangeMessage()
         } catch (ex: SQLException) {
             logger.error("removeAll", ex)
@@ -37,8 +41,8 @@ class SeenHistoryController : AutoCloseable {
 
     fun markUnseen(film: DatenFilm) {
         try {
-            deleteStatement!!.setString(1, film.urlNormalQuality)
-            deleteStatement!!.executeUpdate()
+            deleteStatement.setString(1, film.urlNormalQuality)
+            deleteStatement.executeUpdate()
 
             Daten.getInstance().listeBookmarkList.updateSeen(false, film)
 
@@ -51,8 +55,8 @@ class SeenHistoryController : AutoCloseable {
     fun markUnseen(list: List<DatenFilm>) {
         try {
             for (film in list) {
-                deleteStatement!!.setString(1, film.urlNormalQuality)
-                deleteStatement!!.executeUpdate()
+                deleteStatement.setString(1, film.urlNormalQuality)
+                deleteStatement.executeUpdate()
             }
 
             Daten.getInstance().listeBookmarkList.updateSeen(false, list)
@@ -104,7 +108,7 @@ class SeenHistoryController : AutoCloseable {
      * Load all URLs from database and store in memory.
      */
     fun prepareMemoryCache() {
-        connection!!.createStatement().use { st ->
+        connection.createStatement().use { st ->
             st.executeQuery("SELECT DISTINCT(url) as url FROM seen_history").use { rs ->
                 while (rs.next()) {
                     val url = rs.getString(1)
@@ -120,16 +124,34 @@ class SeenHistoryController : AutoCloseable {
     fun performMaintenance() {
         logger.trace("Start maintenance")
 
+        val config = ApplicationConfiguration.getConfiguration()
+        val lastRunStr = config.getString(LASTRUN, null)
+        val lastRunDate = if (lastRunStr != null) LocalDate.parse(lastRunStr) else null
+        val now = LocalDate.now()
+        val shouldRunHeavyMaintenance = lastRunDate == null ||
+                ChronoUnit.DAYS.between(lastRunDate, now) >= MAX_DAYS
+
         try {
-            connection!!.createStatement().use {
+            connection.createStatement().use {
                 it.executeUpdate("DELETE FROM seen_history WHERE thema = 'Livestream'")
-                it.executeUpdate("REINDEX seen_history")
-                it.executeUpdate("VACUUM")
+                if (shouldRunHeavyMaintenance) {
+                    performDatabaseCompact()
+                    config.setProperty(LASTRUN, now.toString())
+                }
             }
         } catch (e: SQLException) {
             logger.error("Failed to execute maintenance script", e)
         }
+
         logger.trace("Finished maintenance")
+    }
+
+    fun performDatabaseCompact() {
+        logger.info("Compacting database")
+        connection.createStatement().use {
+            it.executeUpdate("REINDEX seen_history")
+            it.executeUpdate("VACUUM")
+        }
     }
 
     /**
@@ -164,8 +186,8 @@ class SeenHistoryController : AutoCloseable {
         var result: Boolean
 
         try {
-            seenStatement!!.setString(1, film.urlNormalQuality)
-            seenStatement!!.executeQuery().use {
+            seenStatement.setString(1, film.urlNormalQuality)
+            seenStatement.executeQuery().use {
                 it.next()
                 val total = it.getInt(1)
                 result = total != 0
@@ -213,11 +235,11 @@ class SeenHistoryController : AutoCloseable {
      */
     @Throws(SQLException::class)
     private fun writeToDatabase(film: DatenFilm) {
-        insertStatement!!.setString(1, film.thema)
-        insertStatement!!.setString(2, film.title)
-        insertStatement!!.setString(3, film.urlNormalQuality)
+        insertStatement.setString(1, film.thema)
+        insertStatement.setString(2, film.title)
+        insertStatement.setString(3, film.urlNormalQuality)
         // write each entry into database
-        insertStatement!!.executeUpdate()
+        insertStatement.executeUpdate()
     }
 
     /**
@@ -231,10 +253,10 @@ class SeenHistoryController : AutoCloseable {
         urlCache.clear()
 
         try {
-            insertStatement?.close()
-            deleteStatement?.close()
-            seenStatement?.close()
-            connection?.close()
+            insertStatement.close()
+            deleteStatement.close()
+            seenStatement.close()
+            connection.close()
 
             // at this stage we have closed everything and we don´t need the shutdown hook to cleanup
             if (shutdownThread != null)
@@ -249,10 +271,12 @@ class SeenHistoryController : AutoCloseable {
         private const val INSERT_SQL = "INSERT INTO seen_history(thema,titel,url) values (?,?,?)"
         private const val DELETE_SQL = "DELETE FROM seen_history WHERE url = ?"
         private const val SEEN_SQL = "SELECT COUNT(url) AS total FROM seen_history WHERE url = ?"
+        private const val LASTRUN = "database.seen_history.maintenance.lastRun"
+        private const val MAX_DAYS: Long = 30
     }
 
     private fun performSqliteSetup() {
-        connection!!.createStatement().use { statement ->
+        connection.createStatement().use { statement ->
             basicSqliteSettings(statement)
             val cpus = Runtime.getRuntime().availableProcessors() / 2
             statement.executeUpdate("PRAGMA threads=$cpus")
@@ -275,10 +299,10 @@ class SeenHistoryController : AutoCloseable {
 
     @Throws(SQLException::class)
     fun removeDuplicates() {
-        val prevAutoCommitState = connection!!.autoCommit
-        connection!!.autoCommit = false
+        val prevAutoCommitState = connection.autoCommit
+        connection.autoCommit = false
         try {
-            connection!!.createStatement().use { statement ->
+            connection.createStatement().use { statement ->
                 // get all rows with unique urls
                 val code = "CREATE TABLE temp_history AS\n" +
                         "SELECT\n" +
@@ -305,13 +329,13 @@ class SeenHistoryController : AutoCloseable {
                 statement.executeUpdate("INSERT INTO seen_history(datum,thema,titel,url) SELECT datum,thema,titel,url FROM temp_history")
                 statement.executeUpdate("DROP TABLE temp_history")
             }
-            connection!!.commit()
+            connection.commit()
         }
         catch (e: SQLException) {
-            connection!!.rollback()
+            connection.rollback()
             throw e
         }
-        connection!!.autoCommit = prevAutoCommitState
+        connection.autoCommit = prevAutoCommitState
     }
 
     @Throws(SQLException::class)
@@ -319,13 +343,13 @@ class SeenHistoryController : AutoCloseable {
         var total: Long = 0
         var distinct: Long = 0
 
-        connection!!.createStatement().use { statement ->
+        connection.createStatement().use { statement ->
             statement!!.executeQuery("SELECT COUNT(*) FROM seen_history").use {
                 it.next()
                 total = it.getLong(1)
             }
         }
-        connection!!.createStatement().use { statement ->
+        connection.createStatement().use { statement ->
             statement.executeQuery("SELECT COUNT(*) FROM (SELECT DISTINCT url FROM seen_history)").use {
                 it.next()
                 distinct = it.getLong(1)
@@ -346,9 +370,9 @@ class SeenHistoryController : AutoCloseable {
 
             performSqliteSetup()
 
-            insertStatement = connection?.prepareStatement(INSERT_SQL)
-            deleteStatement = connection?.prepareStatement(DELETE_SQL)
-            seenStatement = connection?.prepareStatement(SEEN_SQL)
+            insertStatement = connection.prepareStatement(INSERT_SQL)
+            deleteStatement = connection.prepareStatement(DELETE_SQL)
+            seenStatement = connection.prepareStatement(SEEN_SQL)
 
             installShutdownHook()
         } catch (ex: SQLException) {
