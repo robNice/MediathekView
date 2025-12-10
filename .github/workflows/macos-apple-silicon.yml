@@ -20,7 +20,7 @@ jobs:
             dmg_suffix: apple-silicon
             dmg_file: MediathekView-latest-apple-silicon.dmg
           - arch: intel
-            runner: macos-13
+            runner: macos-15-intel
             mvn_profile: mac_intel
             dmg_suffix: mac-intel
             dmg_file: MediathekView-latest-mac-intel.dmg
