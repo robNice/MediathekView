@@ -30,6 +30,16 @@ public class GuiFunktionenProgramme {
 
     private static final ArrayList<String> winPfade = new ArrayList<>();
     private static final Logger logger = LogManager.getLogger();
+    private static final String PFAD_LINUX_VLC = "/usr/bin/vlc";
+    private static final String PFAD_MAC_VLC = "/Applications/VLC.app/Contents/MacOS/VLC";
+    private static final String PFAD_WIN = "\\VideoLAN\\VLC\\vlc.exe";
+    /**
+     * Use another path var for VLC on windows. Introduced in Version 10.
+     */
+    private static final String ENV_WINDOWS_PATH_VLC = "PATH_VLC";
+    private static final String PFAD_LINUX_FFMPEG = "/usr/bin/ffmpeg";
+    private static final String PFAD_MAC_FFMPEG = "bin/ffmpeg";
+    private static final String PFAD_WINDOWS_FFMPEG = "bin\\ffmpeg.exe";
 
     private static void setWinProgPfade() {
         String pfad;
@@ -68,7 +78,8 @@ public class GuiFunktionenProgramme {
                 final var jarFile = new File(cS.getLocation().toURI().getPath());
                 final var jarDir = jarFile.getParentFile().getPath();
                 propFile = new File(jarDir + File.separator + pFilePath);
-            } catch (Exception ignored) {
+            }
+            catch (Exception ignored) {
             }
         }
 
@@ -78,10 +89,6 @@ public class GuiFunktionenProgramme {
         }
         return s;
     }
-
-    private static final String PFAD_LINUX_VLC = "/usr/bin/vlc";
-    private static final String PFAD_MAC_VLC = "/Applications/VLC.app/Contents/MacOS/VLC";
-    private static final String PFAD_WIN = "\\VideoLAN\\VLC\\vlc.exe";
 
     /**
      * Liefert den Standardpfad für das entsprechende BS.
@@ -93,7 +100,7 @@ public class GuiFunktionenProgramme {
         String pfad = "";
         try {
             if (SystemUtils.IS_OS_LINUX) {
-                    pfad = PFAD_LINUX_VLC;
+                pfad = PFAD_LINUX_VLC;
             }
             else if (SystemUtils.IS_OS_MAC_OSX) {
                 pfad = PFAD_MAC_VLC;
@@ -108,20 +115,17 @@ public class GuiFunktionenProgramme {
                 }
             }
 
-            if (!new File(pfad).exists() && System.getenv("PATH_VLC") != null) {
-                pfad = System.getenv("PATH_VLC");
+            if (!new File(pfad).exists() && System.getenv(ENV_WINDOWS_PATH_VLC) != null) {
+                pfad = System.getenv(ENV_WINDOWS_PATH_VLC);
             }
             if (!new File(pfad).exists()) {
                 pfad = "";
             }
-        } catch (Exception ignore) {
+        }
+        catch (Exception ignore) {
         }
         return pfad;
     }
-
-    private static final String PFAD_LINUX_FFMPEG = "/usr/bin/ffmpeg";
-    private static final String PFAD_MAC_FFMPEG = "bin/ffmpeg";
-    private static final String PFAD_WINDOWS_FFMPEG = "bin\\ffmpeg.exe";
 
     /**
      * Liefert den Standardpfad für das entsprechende BS.
@@ -147,7 +151,8 @@ public class GuiFunktionenProgramme {
             if (!new File(pfad).exists()) {
                 pfad = "";
             }
-        } catch (Exception ignore) {
+        }
+        catch (Exception ignore) {
         }
         return pfad;
     }
@@ -185,7 +190,8 @@ public class GuiFunktionenProgramme {
                 MVMessageDialog.showMessageDialog(null, pSet.size() + " Programmset importiert!",
                         "Ok", JOptionPane.INFORMATION_MESSAGE);
 
-            } else {
+            }
+            else {
                 MVMessageDialog.showMessageDialog(null, "Die Datei wurde nicht importiert!",
                         "Fehler", JOptionPane.ERROR_MESSAGE);
 
@@ -195,6 +201,7 @@ public class GuiFunktionenProgramme {
 
     /**
      * Return the path to our binary directory.
+     *
      * @return the path to the bin directory.
      */
     public static Path getBinaryPath() {
@@ -203,6 +210,7 @@ public class GuiFunktionenProgramme {
 
     /**
      * On Windows exe files can also be located at res\bin...
+     *
      * @return return the path to res\bin directory.
      */
     public static Path getResBinaryPath() {
@@ -211,27 +219,36 @@ public class GuiFunktionenProgramme {
 
     /**
      * Search for an executable on PATH plus our bin directory.
+     *
      * @param name the executable name
      * @return the path INCLUDING the binary name.
      */
     public static Path findExecutableOnPath(String name) {
         var exeString = name;
-        if (SystemUtils.IS_OS_WINDOWS)
-            exeString += ".exe";
 
         var path = System.getenv("PATH");
         path = path + File.pathSeparatorChar + getBinaryPath().toAbsolutePath();
+
         if (SystemUtils.IS_OS_WINDOWS) {
+            exeString += ".exe";
+
             // add VLC "standard" path to path logic on windows
             path += File.pathSeparatorChar + "C:\\Program Files\\VideoLAN\\VLC";
+            // on windows (mostly during coding) binaries do only exist in res\bin directory :(
+            path = path + File.pathSeparatorChar + getResBinaryPath().toAbsolutePath();
         }
-        // on windows (mostly during coding) binaries do only exist in res\bin directory :(
-        if (SystemUtils.IS_OS_WINDOWS)
-            path = path + File.pathSeparatorChar +  getResBinaryPath().toAbsolutePath();
+
+        if (SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_WINDOWS) {
+            // also check Version 10 MV path var
+            var vlcExtPathEnv = System.getenv(ENV_WINDOWS_PATH_VLC);
+            if (vlcExtPathEnv != null) {
+                path += File.pathSeparatorChar + vlcExtPathEnv;
+            }
+        }
 
         for (String dirname : path.split(File.pathSeparator)) {
             File file = new File(dirname, exeString);
-            if (file.isFile() /*&& file.canExecute()*/) {
+            if (file.isFile()) {
                 return file.toPath();
             }
         }
@@ -255,7 +272,8 @@ public class GuiFunktionenProgramme {
                         // und Tschüss
                         return false;
                     }
-                } else {
+                }
+                else {
                     try (FileInputStream in = new FileInputStream(datei);
                          FileOutputStream fOut = new FileOutputStream(GuiFunktionen.addsPfad(zielPfad, datei))) {
                         final byte[] buffer = new byte[64 * 1024];
@@ -264,7 +282,8 @@ public class GuiFunktionenProgramme {
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 final Request request = new Request.Builder().url(datei).get()
                         .header("User-Agent", ApplicationConfiguration.getConfiguration().getString(ApplicationConfiguration.APPLICATION_USER_AGENT))
                         .get().build();
@@ -286,7 +305,8 @@ public class GuiFunktionenProgramme {
                                     // und Tschüss
                                     return false;
                                 }
-                            } else {
+                            }
+                            else {
                                 String file = GuiFunktionen.getDateiName(datei);
                                 File f = new File(GuiFunktionen.addsPfad(zielPfad, file));
                                 try (FileOutputStream fOut = new FileOutputStream(f)) {
@@ -299,7 +319,8 @@ public class GuiFunktionenProgramme {
                     }
                 }
             }
-        } catch (Exception ignored) {
+        }
+        catch (Exception ignored) {
         }
         return true;
     }
@@ -345,36 +366,72 @@ public class GuiFunktionenProgramme {
         return new File(destDir, internalPathToEntry);
     }
 
-    public static boolean praefixTesten(String str, String uurl, boolean praefix) {
-        //prüfen ob url beginnt/endet mit einem Argument in str
-        //wenn str leer dann true
-        boolean ret = false;
-        String url = uurl.toLowerCase();
-        String s1 = "";
-        if (str.isEmpty()) {
-            ret = true;
-        } else {
-            for (int i = 0; i < str.length(); ++i) {
-                if (str.charAt(i) != ',') {
-                    s1 += str.charAt(i);
+    /**
+     * Check if {@code url} starts with any of the comma-separated prefixes in {@code prefixes}.
+     * Matching is case-insensitive.
+     * Semantics:
+     * - Empty {@code prefixes} -> returns true.
+     * - Otherwise: return true if {@code url} starts with at least one prefix.
+     */
+    public static boolean checkPrefix(@NotNull String prefixes, @NotNull String url) {
+        if (prefixes.isEmpty()) {
+            return true;
+        }
+
+        final String lowerUrl = url.toLowerCase();
+        final String lowerPrefixes = prefixes.toLowerCase();
+
+        final int prefixesLen = lowerPrefixes.length();
+        int tokenStart = 0;
+
+        for (int i = 0; i <= prefixesLen; i++) {
+            if (i == prefixesLen || lowerPrefixes.charAt(i) == ',') {
+                if (i > tokenStart) {
+                    final int tokenLen = i - tokenStart;
+
+                    if (tokenLen <= lowerUrl.length()
+                            && lowerUrl.regionMatches(0, lowerPrefixes, tokenStart, tokenLen)) {
+                        return true;
+                    }
                 }
-                if (str.charAt(i) == ',' || i >= str.length() - 1) {
-                    if (praefix) {
-                        //Präfix prüfen
-                        if (url.startsWith(s1.toLowerCase())) {
-                            ret = true;
-                            break;
-                        }
-                    } else //Suffix prüfen
-                        if (url.endsWith(s1.toLowerCase())) {
-                            ret = true;
-                            break;
-                        }
-                    s1 = "";
-                }
+                tokenStart = i + 1;
             }
         }
-        return ret;
+
+        return false;
+    }
+
+    public static boolean checkSuffix(@NotNull String suffixes, @NotNull String url) {
+        if (suffixes.isEmpty()) {
+            return true;
+        }
+
+        final String lowerUrl = url.toLowerCase();
+        final String lowerSuffixes = suffixes.toLowerCase();
+
+        final int urlLen = lowerUrl.length();
+        final int suffixesLen = lowerSuffixes.length();
+
+        int tokenStart = 0;
+
+        for (int i = 0; i <= suffixesLen; i++) {
+            if (i == suffixesLen || lowerSuffixes.charAt(i) == ',') {
+                int tokenLen = i - tokenStart;
+
+                if (tokenLen > 0) {
+                    if (tokenLen <= urlLen) {
+                        int urlStart = urlLen - tokenLen;
+                        if (lowerUrl.regionMatches(urlStart, lowerSuffixes, tokenStart, tokenLen)) {
+                            return true;
+                        }
+                    }
+                }
+
+                tokenStart = i + 1;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -403,7 +460,8 @@ public class GuiFunktionenProgramme {
 //                    ret = true;
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("checkPathWriteable()", e);
         }
 

@@ -27,6 +27,8 @@ import mediathek.config.Konstanten
 import mediathek.gui.actions.UrlHyperlinkAction
 import mediathek.gui.tabs.tab_livestreams.services.ShowService
 import mediathek.gui.tabs.tab_livestreams.services.StreamService
+import mediathek.mac.MacMultimediaPlayerLocator
+import mediathek.mac.SingleIinaPlayer
 import mediathek.mainwindow.MediathekGui
 import mediathek.swing.OverlayPanel
 import mediathek.tool.GermanStringSorter
@@ -102,6 +104,8 @@ class LivestreamPanel : JPanel(BorderLayout()), CoroutineScope by MainScope() {
         refreshTimer.start()
     }
 
+    private var iinaPlayer = SingleIinaPlayer()
+
     private fun setupList() {
         list.cellRenderer = LivestreamRenderer()
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
@@ -123,8 +127,18 @@ class LivestreamPanel : JPanel(BorderLayout()), CoroutineScope by MainScope() {
                             UrlHyperlinkAction.openURL(selected.streamUrl)
                         }
                     }
-                    else // macOS can safely open it via java
-                        Desktop.getDesktop().browse(URI(selected.streamUrl))
+                    else {
+                        MacMultimediaPlayerLocator.findIinaPlayer().ifPresentOrElse({
+                            iinaPlayer.play(selected.streamUrl)
+                        }, {
+                            MacMultimediaPlayerLocator.findVlcPlayer().ifPresentOrElse({
+                                ProcessBuilder("open", "-a", "VLC", selected.streamUrl).start()
+                            },{
+                                // macOS can safely open it via java
+                                Desktop.getDesktop().browse(URI(selected.streamUrl))
+                            })
+                        })
+                    }
                 }
             }
         })
