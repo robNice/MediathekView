@@ -113,7 +113,7 @@
         <junit.jupiter.version>5.10.3</junit.jupiter.version>
         <lucene.version>10.3.0</lucene.version>
         <lgooddatepicker.version>11.2.1</lgooddatepicker.version>
-        <log4j2.version>2.24.3</log4j2.version>
+        <log4j2.version>2.25.3</log4j2.version>
         <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
