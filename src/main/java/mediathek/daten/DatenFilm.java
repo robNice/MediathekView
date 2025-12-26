@@ -10,7 +10,6 @@ import mediathek.tool.FilmSize;
 import mediathek.tool.GermanStringSorter;
 import mediathek.tool.datum.DatumFilm;
 import mediathek.tool.episodes.SeasonEpisode;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -327,7 +327,7 @@ public class DatenFilm implements Comparable<DatenFilm> {
      * @return the film description.
      */
     public String getDescription() {
-        return StringUtils.defaultString(description);
+        return Objects.requireNonNullElse(description, "");
     }
 
     /**

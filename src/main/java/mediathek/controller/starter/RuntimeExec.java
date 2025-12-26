@@ -26,7 +26,6 @@ import mediathek.config.Config;
 import mediathek.gui.messages.DownloadProgressChangedEvent;
 import mediathek.tool.MVFilmSize;
 import mediathek.tool.MessageBus;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -90,7 +89,7 @@ public class RuntimeExec {
                 if (log) {
                     logger.info("=====================");
                     logger.info("Starte Array: ");
-                    logger.info(" -> " + strProgCallArray);
+                    logger.info(" -> {}", strProgCallArray);
                     logger.info("=====================");
                 }
                 process = Runtime.getRuntime().exec(arrProgCallArray);
@@ -98,7 +97,7 @@ public class RuntimeExec {
                 if (log) {
                     logger.info("=====================");
                     logger.info("Starte nicht als Array:");
-                    logger.info(" -> " + strProgCall);
+                    logger.info(" -> {}", strProgCall);
                     logger.info("=====================");
                 }
                 process = Runtime.getRuntime().exec(strProgCall);
@@ -125,7 +124,7 @@ public class RuntimeExec {
 
         @Override
         public @NotNull Pattern load(@NotNull String pattern) throws IllegalArgumentException {
-            logger.trace("COMPILING RuntimeExec PATTERN: " + pattern);
+            logger.trace("COMPILING RuntimeExec PATTERN: {}", pattern);
             return Pattern.compile(pattern);
         }
     }
@@ -192,7 +191,8 @@ public class RuntimeExec {
                     String s = matcher.group().trim();
                     if (!s.isEmpty()) {
                         try {
-                            final long aktSize = Integer.parseInt(StringUtils.replace(s, "kB", ""));
+
+                            final long aktSize = Integer.parseInt(s.replace("kB", ""));
                             mVFilmSize.setAktSize(aktSize * 1_000);
                             final var akt = Duration.between(start.startTime, LocalDateTime.now()).toSeconds();
                             if (oldSecs < akt - 5) {

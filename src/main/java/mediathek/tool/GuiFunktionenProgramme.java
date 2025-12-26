@@ -10,7 +10,6 @@ import mediathek.tool.http.MVHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,7 +82,7 @@ public class GuiFunktionenProgramme {
             }
         }
 
-        var s = StringUtils.replace(propFile.getAbsolutePath(), pFilePath, "");
+        var s = propFile.getAbsolutePath().replace(pFilePath, "");
         if (!s.endsWith(File.separator)) {
             s += File.separator;
         }
@@ -325,6 +324,16 @@ public class GuiFunktionenProgramme {
         return true;
     }
 
+    private static File buildDirectoryHierarchyFor(String entryName, File destDir) {
+        int lastIndex = entryName.lastIndexOf('/');
+        String internalPathToEntry = entryName.substring(0, lastIndex + 1);
+        return new File(destDir, internalPathToEntry);
+    }
+
+
+    /**
+     * Extracts archive entries into destination directory
+     */
     private static boolean entpacken(File archive, File destDir) throws Exception {
         if (!destDir.exists()) {
             return false;
@@ -333,7 +342,7 @@ public class GuiFunktionenProgramme {
         try (ZipFile zipFile = new ZipFile(archive)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
-            byte[] buffer = new byte[16384];
+            byte[] buffer = new byte[16*1024];
             int len;
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
@@ -341,7 +350,8 @@ public class GuiFunktionenProgramme {
 
                 File dir = buildDirectoryHierarchyFor(entryFileName, destDir);
                 if (!dir.exists()) {
-                    dir.mkdirs();
+                    if (!dir.mkdirs())
+                        logger.error("entpacken(): Could not create directory {}", dir.getAbsolutePath());
                 }
 
                 if (!entry.isDirectory()) {
@@ -358,12 +368,6 @@ public class GuiFunktionenProgramme {
         }
 
         return true;
-    }
-
-    private static File buildDirectoryHierarchyFor(String entryName, File destDir) {
-        int lastIndex = entryName.lastIndexOf('/');
-        String internalPathToEntry = entryName.substring(0, lastIndex + 1);
-        return new File(destDir, internalPathToEntry);
     }
 
     /**
@@ -450,7 +454,8 @@ public class GuiFunktionenProgramme {
         File testFile = new File(path);
         try {
             if (!testFile.exists()) {
-                testFile.mkdirs();
+                if (!testFile.mkdirs())
+                    logger.error("checkPathWriteable(): Could not create directory {}", path);
             }
 
             if (testFile.isDirectory()) {
