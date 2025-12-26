@@ -391,7 +391,7 @@ public class PanelPsetLang extends PanelVorlage {
         handler = new TextCopyPasteHandler<>(tfGruppeZielPfad);
         tfGruppeZielPfad.setComponentPopupMenu(handler.getPopupMenu());
 
-        jButtonHilfe.addActionListener(_ -> new DialogHilfe(parentComponent, modalHilfe, new GetFile().getHilfeSuchen(Konstanten.PFAD_HILFETEXT_PRGRAMME)).setVisible(true));
+        jButtonHilfe.addActionListener(_ -> new DialogHilfe(parentComponent, modalHilfe, GetFile.getHilfeSuchen(Konstanten.PFAD_HILFETEXT_PRGRAMME)).setVisible(true));
         jRadioButtonAufloesungKlein.addActionListener(_ -> setAufloesung());
         jRadioButtonAufloesungNormal.addActionListener(_ -> setAufloesung());
         jRadioButtonAufloesungHD.addActionListener(_ -> setAufloesung());

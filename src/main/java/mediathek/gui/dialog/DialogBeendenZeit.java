@@ -93,7 +93,10 @@ public class DialogBeendenZeit extends JDialog {
         comboActions.addActionListener(_ -> setCbShutdownCoputer());
 
         jButtonHilfe.setIcon(SVGIconUtilities.createSVGIcon("icons/fontawesome/circle-question.svg"));
-        jButtonHilfe.addActionListener(_ -> new DialogHilfe(parent, true, new GetFile().getHilfeSuchen(Konstanten.PFAD_HILFETEXT_BEENDEN)).setVisible(true));
+        jButtonHilfe.addActionListener(_ -> {
+            final var msg = GetFile.getHilfeSuchen(Konstanten.PFAD_HILFETEXT_BEENDEN).trim();
+            JOptionPane.showMessageDialog(parent, msg, Konstanten.PROGRAMMNAME, JOptionPane.INFORMATION_MESSAGE);
+        });
         setCbShutdownCoputer();
 
         cbShutdownComputer.addActionListener(_ -> shutdown = cbShutdownComputer.isSelected());

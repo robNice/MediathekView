@@ -395,7 +395,7 @@ class DialogAddDownloadWithCoroutines(
             setNameFilm()
             lblStatus.setText("")
             lblAudioInfo.setText("")
-            lblBusyIndicator.setBusy(false)
+            lblBusyIndicator.isBusy = false
             lblBusyIndicator.isVisible = false
             liveInfoJob?.cancel()
         }

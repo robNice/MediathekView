@@ -90,7 +90,7 @@ public class DialogEditAbo extends JDialog {
         EscapeKeyHandler.installHandler(this, this::dispose);
 
         jButtonHelp.setIcon(SVGIconUtilities.createSVGIcon("icons/fontawesome/circle-question.svg"));
-        jButtonHelp.addActionListener(_ -> new DialogHilfe(parent, true, new GetFile().getHilfeSuchen(Konstanten.PFAD_HILFETEXT_DIALOG_ADD_ABO)).setVisible(true));
+        jButtonHelp.addActionListener(_ -> new DialogHilfe(parent, true, GetFile.getHilfeSuchen(Konstanten.PFAD_HILFETEXT_DIALOG_ADD_ABO)).setVisible(true));
 
         if (comboboxPSet.getModel().getSize() == 0) {
             // dann gibts kein Set zum Aufzeichnen
