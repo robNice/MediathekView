@@ -48,7 +48,7 @@ public class DialogEditAbo extends JDialog {
      * @param aktA the active abo.
      * @param isMultiEditMode show checkbox for each field which shall be changed in multi edit mode
      */
-    public DialogEditAbo(final JFrame parent, DatenAbo aktA, boolean isMultiEditMode) {
+    public DialogEditAbo(JFrame parent, DatenAbo aktA, boolean isMultiEditMode) {
         super(parent, true);
         initComponents();
 
@@ -90,7 +90,10 @@ public class DialogEditAbo extends JDialog {
         EscapeKeyHandler.installHandler(this, this::dispose);
 
         jButtonHelp.setIcon(SVGIconUtilities.createSVGIcon("icons/fontawesome/circle-question.svg"));
-        jButtonHelp.addActionListener(_ -> new DialogHilfe(parent, true, GetFile.getHilfeSuchen(Konstanten.PFAD_HILFETEXT_DIALOG_ADD_ABO)).setVisible(true));
+        jButtonHelp.addActionListener(_ -> {
+            var msg = GetFile.getHilfeSuchen(Konstanten.PFAD_HILFETEXT_DIALOG_ADD_ABO).trim();
+            new DialogHilfe(this, true, msg).setVisible(true);
+        });
 
         if (comboboxPSet.getModel().getSize() == 0) {
             // dann gibts kein Set zum Aufzeichnen
