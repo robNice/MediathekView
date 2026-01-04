@@ -11,8 +11,10 @@ import mediathek.tool.http.MVHttpClient
 import okhttp3.FormBody
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody
+import okhttp3.Credentials
 import org.apache.logging.log4j.LogManager
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -22,59 +24,74 @@ import javax.swing.JMenuItem
 import javax.swing.JOptionPane
 import javax.swing.JPopupMenu
 
-class JDownloadHelper {
+class PyLoadHelper {
     private val historyController = SeenHistoryController()
 
     private fun downloadUrl(url: HttpUrl, film: DatenFilm) {
-        val jdUrlString = MVConfig.get(MVConfig.Configs.SYSTEM_JDOWNLOADER_URL)
-        val jdUrl = try {
-            jdUrlString.toHttpUrl()
+        val baseUrl = MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_URL).trimEnd('/')
+        val user = MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_USER)
+        val pass = MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_PASSWORD)
+
+        val apiUrl = try {
+            "$baseUrl/api/add_package".toHttpUrl()
         } catch (e: IllegalArgumentException) {
-            logger.error("Invalid JDownloader URL in config: {}", jdUrlString)
+            logger.error("Invalid pyLoad URL in config: {}", baseUrl)
             SwingErrorDialog.showExceptionMessage(
                 MediathekGui.ui(),
-                "<html>Die konfigurierte JDownloader-URL ist ungültig:<br><br><b>$jdUrlString</b></html>",
+                "<html>Die konfigurierte pyLoad-URL ist ungültig:<br><br><b>$baseUrl</b></html>",
                 e
             )
             return
         }
-        val formBody: RequestBody = FormBody.Builder()
-            .add("urls", url.toString())
-            .build()
+
+        val jsonBody = """
+        {
+          "name": "${film.getTitle()}",
+          "dest": 1,
+          "links": ["$url"]
+        }
+    """.trimIndent()
+
+        val requestBody = RequestBody.create(
+            "application/json".toMediaType(),
+            jsonBody
+        )
+
         val request = Request.Builder()
-            .url(jdUrl)
-            .header("Referer", "https://mediathekview")
-            .header("Origin", "https://mediathekview")
-            .post(formBody)
+            .url(apiUrl)
+            .header(
+                "Authorization",
+                Credentials.basic(user, pass)
+            )
+            .post(requestBody)
             .build()
+
         try {
-            val builder = MVHttpClient.getInstance().httpClient.newBuilder()
-            builder.connectTimeout(125, TimeUnit.MILLISECONDS)
-            val client = builder.build()
+            val client = MVHttpClient.getInstance()
+                .httpClient
+                .newBuilder()
+                .connectTimeout(500, TimeUnit.MILLISECONDS)
+                .build()
+
             client.newCall(request).execute().use {
-                if (it.isSuccessful)
+                if (it.isSuccessful) {
                     historyController.markSeen(film)
+                } else {
+                    throw RuntimeException("pyLoad HTTP ${it.code}")
+                }
             }
         }
-        catch (e: ConnectException) {
-            showErrorMessage()
-        }
-        catch (e: SocketTimeoutException) {
-            showErrorMessage()
-        }
         catch (e: Exception) {
-            logger.error("downloadUrl", e)
-            SwingErrorDialog.showExceptionMessage(MediathekGui.ui(),
-          "<html>Die URL konnte nicht mit JDownloader geladen werden.<br>" +
-                  "Bitte wenden Sie sich bei Bedarf an das Forum.</html>", e)
+            logger.error("pyLoad downloadUrl", e)
+            showErrorMessage()
         }
     }
 
     private fun showErrorMessage() {
         JOptionPane.showMessageDialog(
             MediathekGui.ui(),
-            "Verbindung mit JDownloader nicht möglich.\n" +
-                    "Bitte stellen Sie sicher, dass JDownloader gestartet wurde.",
+            "Verbindung mit pyLoad nicht möglich.\n" +
+                    "Bitte stellen Sie sicher, dass pyLoad gestartet wurde und die in den Einstellungen hinterlegten Daten (URL, Benutzer und Passwort) korrekt sind.",
             Konstanten.PROGRAMMNAME,
             JOptionPane.ERROR_MESSAGE)
     }
@@ -82,7 +99,11 @@ class JDownloadHelper {
     fun installContextMenu(film: DatenFilm, jPopupMenu: JPopupMenu) {
         jPopupMenu.addSeparator()
 
-        val mJD = JMenu("Mit JDownloader herunterladen")
+        val pyLoadUrl = MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_URL)
+        val pyLoadConfigured = pyLoadUrl.isNotBlank()
+
+        val mJD = JMenu("Mit pyLoad herunterladen")
+        mJD.isEnabled = pyLoadConfigured
         val uNormal = film.urlNormalQuality.toHttpUrl()
         val uHq = film.getUrlFuerAufloesung(FilmResolution.Enum.HIGH_QUALITY).toHttpUrl()
         val uLow = film.getUrlFuerAufloesung(FilmResolution.Enum.LOW).toHttpUrl()
@@ -103,7 +124,8 @@ class JDownloadHelper {
         }
         jPopupMenu.add(mJD)
 
-        val miWebsiteToJd = JMenuItem("Webseiten-URL an JDownloader übergeben")
+        val miWebsiteToJd = JMenuItem("Webseiten-URL an pyLoad übergeben")
+        miWebsiteToJd.isEnabled = pyLoadConfigured
         miWebsiteToJd.addActionListener {
             try {
                 val webSiteUrl = film.websiteUrl.toHttpUrl()

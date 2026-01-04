@@ -81,6 +81,41 @@ public class PanelEinstellungenErweitert extends JPanel {
         handler = new TextCopyPasteHandler<>(jTextFieldJDownloaderUrl);
         jTextFieldJDownloaderUrl.setComponentPopupMenu(handler.getPopupMenu());
 
+        jTextFieldPyLoadUrl.setText(MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_URL));
+        jTextFieldPyLoadUrl.getDocument().addDocumentListener(new BeobDoc(MVConfig.Configs.SYSTEM_PYLOAD_URL, jTextFieldPyLoadUrl));
+        handler = new TextCopyPasteHandler<>(jTextFieldPyLoadUrl);
+        jTextFieldPyLoadUrl.setComponentPopupMenu(handler.getPopupMenu());
+
+        jTextFieldPyLoadUser.setText(MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_USER));
+        jTextFieldPyLoadUser.getDocument().addDocumentListener(new BeobDoc(MVConfig.Configs.SYSTEM_PYLOAD_USER, jTextFieldPyLoadUser));
+        handler = new TextCopyPasteHandler<>(jTextFieldPyLoadUser);
+        jTextFieldPyLoadUser.setComponentPopupMenu(handler.getPopupMenu());
+
+        jPasswordFieldPyLoadPassword.setText(MVConfig.get(MVConfig.Configs.SYSTEM_PYLOAD_PASSWORD));
+        jPasswordFieldPyLoadPassword.getDocument().addDocumentListener(new DocumentListener() {
+            private void update() {
+                MVConfig.add(
+                        MVConfig.Configs.SYSTEM_PYLOAD_PASSWORD,
+                        new String(jPasswordFieldPyLoadPassword.getPassword())
+                );
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                update();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                update();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                update();
+            }
+        });
+
 
         if (!SystemUtils.IS_OS_LINUX) {
             jTextFieldProgrammShutdown.setEnabled(false);
@@ -219,6 +254,10 @@ public class PanelEinstellungenErweitert extends JPanel {
         var jPanel2 = new JPanel();
         jTextFieldProgrammDateimanager = new JTextField();
         jTextFieldJDownloaderUrl = new JTextField();
+        jTextFieldPyLoadUrl = new JTextField();
+        jTextFieldPyLoadUser = new JTextField();
+        jPasswordFieldPyLoadPassword = new JPasswordField();
+
         jButtonProgrammDateimanager = new JButton();
         var jLabel1 = new JLabel();
         var jLabel2 = new JLabel();
@@ -333,17 +372,50 @@ public class PanelEinstellungenErweitert extends JPanel {
         jPanelJDownloader.setBorder(new TitledBorder("JDownloader"));
         jPanelJDownloader.setLayout(new MigLayout(
                 new LC().insets("5").hideMode(3).gridGap("5", "5"),
-                new AC().grow().fill(),
-                new AC().fill()
+                new AC().grow().fill().gap().fill(),
+                new AC().fill().fill()
         ));
 
+        var jLabelJDownloaderUrl = new JLabel("JDownloader-URL:");
+        jPanelJDownloader.add(jLabelJDownloaderUrl, new CC().cell(0, 0).spanX(2));
         jTextFieldJDownloaderUrl.setToolTipText(
                 "<html>Wenn jDownloader nicht auf dem lokalen Host installiert ist oder unter einem anderen Port reagieren soll, hier bitte angeben.<br>" +
                         "Default: http://127.0.0.1:9666/flash/add</html>"
         );
 
-        jPanelJDownloader.add(jTextFieldJDownloaderUrl, new CC().cell(0, 0));
+        jPanelJDownloader.add(jTextFieldJDownloaderUrl, new CC().cell(0, 1));
         add(jPanelJDownloader);
+
+
+        //======== jPanelPyLoad ========
+        var jPanelPyLoad = new JPanel();
+        jPanelPyLoad.setBorder(new TitledBorder("pyLoad"));
+        jPanelPyLoad.setLayout(new MigLayout(
+                new LC().insets("5").hideMode(3).gridGap("5", "5"),
+                new AC().grow().fill().gap().fill(),
+                new AC().fill().fill().fill().fill().fill().fill()
+        ));
+
+        var jLabelPyLoadUrl = new JLabel("pyLoad-URL:");
+        var jLabelPyLoadUser = new JLabel("Benutzer:");
+        var jLabelPyLoadPassword = new JLabel("Passwort:");
+
+        jPanelPyLoad.add(jLabelPyLoadUrl, new CC().cell(0, 0).spanX(2));
+
+        jTextFieldPyLoadUrl.setToolTipText("PyLoad-URL komplett angeben (z.B.: http://127.0.0.1:8000)");
+        jPanelPyLoad.add(jTextFieldPyLoadUrl, new CC().cell(0, 1));
+
+        jPanelPyLoad.add(jLabelPyLoadUser, new CC().cell(0, 2).spanX(2));
+        jTextFieldPyLoadUser.setToolTipText("Benutzername für pyLoad");
+
+        jPanelPyLoad.add(jTextFieldPyLoadUser, new CC().cell(0, 3));
+
+        jPanelPyLoad.add(jLabelPyLoadPassword, new CC().cell(0, 4).spanX(2));
+        jPasswordFieldPyLoadPassword.setToolTipText("Passwort für pyLoad");
+
+        jPanelPyLoad.add(jPasswordFieldPyLoadPassword, new CC().cell(0, 5));
+
+        add(jPanelPyLoad);
 
 
         //======== jPanel3 ========
@@ -401,5 +473,8 @@ public class PanelEinstellungenErweitert extends JPanel {
     private JTextField jTextFieldProgrammShutdown;
     private ShutdownActionComboBox cbDefaultShutdownHelperCommand;
     private JTextField jTextFieldJDownloaderUrl;
+    private JTextField jTextFieldPyLoadUrl;
+    private JTextField jTextFieldPyLoadUser;
+    private JPasswordField jPasswordFieldPyLoadPassword;
     // End of variables declaration//GEN-END:variables
 }

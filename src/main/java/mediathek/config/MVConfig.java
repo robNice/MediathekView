@@ -118,6 +118,9 @@ public class MVConfig {
         SYSTEM_LINUX_SHUTDOWN("Programm-Linux-Shutdown"),
         SYSTEM_PLAYER_ABSPIELEN("Player-zum-Abspielen"),
         SYSTEM_JDOWNLOADER_URL("system-jdownloader-url", "http://127.0.0.1:9666/flash/add"),
+        SYSTEM_PYLOAD_URL("system-pyload-url"),
+        SYSTEM_PYLOAD_USER("system-pyload-user"),
+        SYSTEM_PYLOAD_PASSWORD("system-pyload-password"),
         // Fenstereinstellungen
 
         SYSTEM_EIGENSCHAFTEN_TABELLE_FILME("Eigenschaften-Tabellen-Filme"),
