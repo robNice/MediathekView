@@ -76,6 +76,12 @@ public class PanelEinstellungenErweitert extends JPanel {
         handler = new TextCopyPasteHandler<>(jTextFieldProgrammShutdown);
         jTextFieldProgrammShutdown.setComponentPopupMenu(handler.getPopupMenu());
 
+        jTextFieldJDownloaderUrl.setText(MVConfig.get(MVConfig.Configs.SYSTEM_JDOWNLOADER_URL));
+        jTextFieldJDownloaderUrl.getDocument().addDocumentListener(new BeobDoc(MVConfig.Configs.SYSTEM_JDOWNLOADER_URL, jTextFieldJDownloaderUrl));
+        handler = new TextCopyPasteHandler<>(jTextFieldJDownloaderUrl);
+        jTextFieldJDownloaderUrl.setComponentPopupMenu(handler.getPopupMenu());
+
+
         if (!SystemUtils.IS_OS_LINUX) {
             jTextFieldProgrammShutdown.setEnabled(false);
             jButtonProgrammShutdown.setEnabled(false);
@@ -212,6 +218,7 @@ public class PanelEinstellungenErweitert extends JPanel {
         jCheckBoxDownloadSofortStarten = new JCheckBox();
         var jPanel2 = new JPanel();
         jTextFieldProgrammDateimanager = new JTextField();
+        jTextFieldJDownloaderUrl = new JTextField();
         jButtonProgrammDateimanager = new JButton();
         var jLabel1 = new JLabel();
         var jLabel2 = new JLabel();
@@ -320,6 +327,25 @@ public class PanelEinstellungenErweitert extends JPanel {
         }
         add(jPanel4);
 
+
+        //======== jPanelJDownloader ========
+        var jPanelJDownloader = new JPanel();
+        jPanelJDownloader.setBorder(new TitledBorder("JDownloader"));
+        jPanelJDownloader.setLayout(new MigLayout(
+                new LC().insets("5").hideMode(3).gridGap("5", "5"),
+                new AC().grow().fill(),
+                new AC().fill()
+        ));
+
+        jTextFieldJDownloaderUrl.setToolTipText(
+                "<html>Wenn jDownloader nicht auf dem lokalen Host installiert ist oder unter einem anderen Port reagieren soll, hier bitte angeben.<br>" +
+                        "Default: http://127.0.0.1:9666/flash/add</html>"
+        );
+
+        jPanelJDownloader.add(jTextFieldJDownloaderUrl, new CC().cell(0, 0));
+        add(jPanelJDownloader);
+
+
         //======== jPanel3 ========
         {
             jPanel3.setBorder(new TitledBorder("Linux: Aufruf zum Shutdown"));
@@ -374,5 +400,6 @@ public class PanelEinstellungenErweitert extends JPanel {
     private JButton jButtonProgrammShutdown;
     private JTextField jTextFieldProgrammShutdown;
     private ShutdownActionComboBox cbDefaultShutdownHelperCommand;
+    private JTextField jTextFieldJDownloaderUrl;
     // End of variables declaration//GEN-END:variables
 }

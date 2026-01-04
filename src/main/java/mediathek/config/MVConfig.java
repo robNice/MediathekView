@@ -117,6 +117,7 @@ public class MVConfig {
         SYSTEM_URL_OEFFNEN("Programm-Url-oeffnen"),
         SYSTEM_LINUX_SHUTDOWN("Programm-Linux-Shutdown"),
         SYSTEM_PLAYER_ABSPIELEN("Player-zum-Abspielen"),
+        SYSTEM_JDOWNLOADER_URL("system-jdownloader-url", "http://127.0.0.1:9666/flash/add"),
         // Fenstereinstellungen
 
         SYSTEM_EIGENSCHAFTEN_TABELLE_FILME("Eigenschaften-Tabellen-Filme"),

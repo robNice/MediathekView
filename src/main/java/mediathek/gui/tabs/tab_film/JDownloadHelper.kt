@@ -1,6 +1,7 @@
 package mediathek.gui.tabs.tab_film
 
 import mediathek.config.Konstanten
+import mediathek.config.MVConfig
 import mediathek.controller.history.SeenHistoryController
 import mediathek.daten.DatenFilm
 import mediathek.daten.FilmResolution
@@ -25,11 +26,25 @@ class JDownloadHelper {
     private val historyController = SeenHistoryController()
 
     private fun downloadUrl(url: HttpUrl, film: DatenFilm) {
+        val jdUrlString = MVConfig.get(MVConfig.Configs.SYSTEM_JDOWNLOADER_URL)
+        val jdUrl = try {
+            jdUrlString.toHttpUrl()
+        } catch (e: IllegalArgumentException) {
+            logger.error("Invalid JDownloader URL in config: {}", jdUrlString)
+            SwingErrorDialog.showExceptionMessage(
+                MediathekGui.ui(),
+                "<html>Die konfigurierte JDownloader-URL ist ungültig:<br><br><b>$jdUrlString</b></html>",
+                e
+            )
+            return
+        }
         val formBody: RequestBody = FormBody.Builder()
             .add("urls", url.toString())
             .build()
         val request = Request.Builder()
-            .url("http://127.0.0.1:9666/flash/add")
+            .url(jdUrl)
+            .header("Referer", "https://mediathekview")
+            .header("Origin", "https://mediathekview")
             .post(formBody)
             .build()
         try {
